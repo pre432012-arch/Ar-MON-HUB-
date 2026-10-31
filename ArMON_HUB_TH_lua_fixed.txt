@@ -1690,44 +1690,27 @@ local function BuildArMONLibrary()
     -- วงน้ำกระเพื่อมตอนกด
     local function ripple(row, input)
         local U = Library.Util
-        local size = row.AbsoluteSize
-        local pos = Vector2.new(size.X / 2, size.Y / 2)
-        if input and input.Position then
-            local inset = GuiService:GetGuiInset()
-            pos = Vector2.new(input.Position.X, input.Position.Y) + inset - row.AbsolutePosition
-            pos = Vector2.new(math.clamp(pos.X, 0, size.X), math.clamp(pos.Y, 0, size.Y))
-        end
-        -- กรอบคลุมแถวด้วยขนาดแบบ scale + ตัดส่วนเกิน: วงกลมที่ขยายใหญ่จะไม่ดันความสูงของแถว (AutomaticSize.Y)
-        local holder = row:FindFirstChild("RippleHolder")
-        if not holder then
-            holder = U.create("Frame", {
-                Name = "RippleHolder",
-                Parent = row,
-                BackgroundTransparency = 1,
-                BorderSizePixel = 0,
-                Position = UDim2.fromScale(0, 0),
-                Size = UDim2.fromScale(1, 1),
-                ClipsDescendants = true,
-                Active = false,
-                ZIndex = 2,
-            })
-            U.corner(holder, 10)
-        end
-        local circle = U.create("Frame", {
-            Parent = holder,
-            AnchorPoint = Vector2.new(0.5, 0.5),
-            Position = UDim2.fromOffset(pos.X, pos.Y),
-            Size = UDim2.fromOffset(0, 0),
+        if not row or not row.Parent then return end
+        -- เอฟเฟกต์กด: แผ่นสีบางๆ ขนาด scale เต็มแถวแล้วค่อยจาง
+        -- (เดิมใช้วงกลมขยายขนาดใหญ่ ทำให้แถวสูงขึ้นจนกลายเป็นแผ่นขาวบังชื่อ และดันแถวอื่นเลื่อน)
+        local old = row:FindFirstChild("PressFlash")
+        if old then old:Destroy() end
+        local flash = U.create("Frame", {
+            Parent = row,
+            Name = "PressFlash",
             BackgroundColor3 = Theme.Primary,
-            BackgroundTransparency = 0.8,
+            BackgroundTransparency = 0.82,
             BorderSizePixel = 0,
-            ZIndex = 2,
+            Size = UDim2.fromScale(1, 1),
+            Position = UDim2.fromScale(0, 0),
+            Active = false,
+            ZIndex = 0,
         })
-        U.create("UICorner", { Parent = circle, CornerRadius = UDim.new(1, 0) })
-        local diameter = math.max(size.X, size.Y) * 2.2
-        U.tween(circle, 0.45, { Size = UDim2.fromOffset(diameter, diameter), BackgroundTransparency = 1 },
-            Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        task.delay(0.5, function() if circle then circle:Destroy() end end)
+        U.corner(flash, 10)
+        U.tween(flash, 0.3, { BackgroundTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        task.delay(0.35, function()
+            if flash and flash.Parent then flash:Destroy() end
+        end)
     end
 
     -- แถวมาตรฐาน: ชื่อ + คำอธิบาย (สูงอัตโนมัติ) + พื้นที่ว่างฝั่งขวาสำหรับ control
